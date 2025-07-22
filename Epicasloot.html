@@ -1,0 +1,323 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>Slot Multiverso Épico</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
+  <style>
+    body {
+      margin: 0;
+      font-family: 'Press Start 2P', cursive;
+      background: black;
+      overflow: hidden;
+      color: #00fff2;
+      text-align: center;
+    }
+
+    canvas#particles {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      z-index: 0;
+    }
+
+    .slot-game {
+      position: relative;
+      z-index: 2;
+      margin-top: 40px;
+      background: #111;
+      padding: 20px;
+      border: 4px solid #00fff2;
+      max-width: 360px;
+      margin-left: auto;
+      margin-right: auto;
+      box-shadow: 0 0 15px #00fff2;
+    }
+
+    #boss {
+      position: absolute;
+      top: 45%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      font-size: 1.8em;
+      background: rgba(0, 0, 0, 0.85);
+      padding: 15px 25px;
+      color: #ff0044;
+      border: 2px solid #ff0044;
+      border-radius: 12px;
+      z-index: 3;
+      display: none;
+      animation: bossBlink 0.5s infinite;
+    }
+
+    @keyframes bossBlink {
+      0% { opacity: 1; }
+      50% { opacity: 0.5; }
+      100% { opacity: 1; }
+    }
+
+    #universeTransition {
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      font-size: 1.4em;
+      background: rgba(0,0,0,0.8);
+      color: #00fff2;
+      padding: 20px 30px;
+      border: 3px dashed #00fff2;
+      border-radius: 10px;
+      z-index: 9999;
+      display: none;
+      animation: pulse 0.6s infinite;
+    }
+
+    @keyframes pulse {
+      0% { transform: translate(-50%, -50%) scale(1); }
+      50% { transform: translate(-50%, -50%) scale(1.05); }
+      100% { transform: translate(-50%, -50%) scale(1); }
+    }
+
+    #reels {
+      font-size: 2.2em;
+      margin: 20px 0;
+      letter-spacing: 10px;
+      word-break: break-word;
+    }
+
+    button {
+      font-size: 1em;
+      padding: 12px 24px;
+      background: #00fff2;
+      color: black;
+      border: none;
+      cursor: pointer;
+      box-shadow: 0 0 10px #00fff2;
+    }
+
+    .scoreboard {
+      margin-top: 30px;
+      font-size: 0.75em;
+    }
+
+    #narrative {
+      font-size: 0.7em;
+      margin-top: 20px;
+      color: #9efeff;
+    }
+
+    input {
+      font-family: 'Press Start 2P', cursive;
+      padding: 6px;
+      margin-top: 10px;
+      font-size: 0.6em;
+      background: #000;
+      color: #00fff2;
+      border: 2px solid #00fff2;
+      width: 90%;
+      box-sizing: border-box;
+    }
+
+    @media (max-width: 500px) {
+      .slot-game {
+        width: 95%;
+        padding: 15px;
+      }
+      #reels {
+        font-size: 1.8em;
+        letter-spacing: 5px;
+      }
+      button {
+        width: 90%;
+        font-size: 0.9em;
+        padding: 10px;
+      }
+    }
+  </style>
+</head>
+<body>
+
+<canvas id="particles"></canvas>
+
+<div id="universeTransition">🌌 ¡Nuevo universo desbloqueado!</div>
+
+<div class="slot-game">
+  <h1>🎰 Slot Épico</h1>
+  <input type="text" id="playerName" placeholder="Tu nombre">
+  <div id="reels">🍒🍋🍊</div>
+  <div id="boss">👾 ¡Mini Jefe Derrotado! 💪 +1 moneda</div>
+  <button id="spinBtn">GIRAR</button>
+  <p>Monedas: <span id="coins">1000</span></p>
+  <p>Tiradas: <span id="spins">0</span></p>
+  <div id="narrative">Explora el multiverso digital ⚡</div>
+  <div class="scoreboard">
+    <h3>Puntajes</h3>
+    <ul id="scoreList"></ul>
+  </div>
+</div>
+<script>
+// 🎇 Partículas TRON
+const canvas = document.getElementById('particles');
+const ctx = canvas.getContext('2d');
+canvas.width = window.innerWidth;
+canvas.height = window.innerHeight;
+
+let particles = Array.from({length: 120}, () => ({
+  x: Math.random() * canvas.width,
+  y: Math.random() * canvas.height,
+  speed: Math.random() * 1 + 0.5,
+  radius: Math.random() * 2 + 1
+}));
+
+function animateParticles() {
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  ctx.fillStyle = '#00fff2';
+  particles.forEach(p => {
+    ctx.beginPath();
+    ctx.arc(p.x, p.y, p.radius, 0, Math.PI * 2);
+    ctx.fill();
+    p.y += p.speed;
+    if (p.y > canvas.height) p.y = 0;
+  });
+  requestAnimationFrame(animateParticles);
+}
+animateParticles();
+
+window.addEventListener('resize', () => {
+  canvas.width = window.innerWidth;
+  canvas.height = window.innerHeight;
+});
+
+// 🎰 Juego principal
+let coins = 1000;
+let spins = 0;
+let modeIndex = 0;
+let resetTriggered = false;
+
+const modes = [
+  { name: "Slot TRONverse", reels: ['🍒','🍋','🍊','🔔','💎'], text: "Restaurando energía del arcade..." },
+  { name: "Slot Quest Realm", reels: ['🗡️','🛡️','🏹','👑','⚔️'], text: "Explorando tierras medievales 🛡️" },
+  { name: "Turbo Slot City", reels: ['🏍️','🚗','🚙','🚓','🛞'], text: "¡Velocidad máxima retro! 🏁" }
+];
+
+const scoreList = document.getElementById("scoreList");
+const narrative = document.getElementById("narrative");
+const reelsDisplay = document.getElementById("reels");
+const bossDiv = document.getElementById("boss");
+const transitionDiv = document.getElementById("universeTransition");
+
+document.getElementById('spinBtn').addEventListener('click', () => {
+  const name = document.getElementById("playerName").value.trim() || "Anónimo";
+  if (coins <= 0) return alert("Sin monedas 😢");
+
+  spins++;
+  coins -= 10;
+
+  // 🌌 Cambio de universo con animación
+  if (coins >= 1600) {
+    let newIndex = Math.floor((coins - 1600) / 200) % modes.length;
+    if (newIndex !== modeIndex) {
+      modeIndex = newIndex;
+      document.querySelector('h1').textContent = "🎰 " + modes[modeIndex].name;
+      narrative.textContent = modes[modeIndex].text;
+
+      // Mostrar transición visual
+      transitionDiv.textContent = `🌌 ¡Has entrado al ${modes[modeIndex].name}!`;
+      transitionDiv.style.display = "block";
+      setTimeout(() => {
+        transitionDiv.style.display = "none";
+      }, 2000);
+    }
+  }
+
+  const currentReels = modes[modeIndex].reels;
+  const r = Array.from({length: 3}, () => currentReels[Math.floor(Math.random() * currentReels.length)]);
+
+  reelsDisplay.textContent = "⏳⏳⏳";
+  setTimeout(() => {
+    reelsDisplay.textContent = `${r[0]}⏳⏳`;
+    setTimeout(() => {
+      reelsDisplay.textContent = `${r[0]}${r[1]}⏳`;
+      setTimeout(() => {
+        reelsDisplay.textContent = `${r[0]}${r[1]}${r[2]}`;
+
+        // 🎯 Combinaciones
+        if (r[0] === r[1] && r[1] === r[2]) {
+          coins += 100;
+          narrative.textContent = "¡Jackpot! Tres iguales 🔥 +100 monedas";
+        } else if (r[0] === r[1] || r[1] === r[2] || r[0] === r[2]) {
+          coins += 20;
+          narrative.textContent = "¡Combo doble! +20 monedas 💰";
+        } else {
+          narrative.textContent = modes[modeIndex].text;
+        }
+
+        // 🎁 Bonificaciones por tiradas
+        if (spins % 5 === 0) coins += 50;
+        if (spins % 50 === 0) coins += 1000;
+
+        // 👾 Mini jefe cada 20 tiradas
+        if (spins % 20 === 0 && !resetTriggered) {
+          bossDiv.style.display = "block";
+          coins += 1;
+          narrative.textContent = "👾 ¡Mini jefe derrotado! +1 moneda 💪";
+          document.getElementById('coins').textContent = coins;
+          updateScoreboard(name, coins);
+          setTimeout(() => {
+            bossDiv.style.display = "none";
+          }, 2000);
+        }
+
+        // 💣 Colapso multiversal
+        if (resetTriggered) {
+          reelsDisplay.textContent = "💣 PERDISTE 💣";
+          narrative.textContent = "El multiverso colapsó... reiniciando ⚠️";
+          document.getElementById('spinBtn').disabled = true;
+          setTimeout(() => {
+            coins = 1000;
+            resetTriggered = false;
+            narrative.textContent = "🎮 Nuevo ciclo iniciado. ¡Buena suerte!";
+            document.getElementById('coins').textContent = coins;
+            document.getElementById('spinBtn').disabled = false;
+            reelsDisplay.textContent = `${currentReels[0]}${currentReels[1]}${currentReels[2]}`;
+          }, 3000);
+        } else if (coins >= 3000) {
+          resetTriggered = true;
+          narrative.textContent = "⚠️ Nivel cósmico alcanzado... próxima tirada = colapso total";
+        }
+
+        document.getElementById('coins').textContent = coins;
+        document.getElementById('spins').textContent = spins;
+        updateScoreboard(name, coins);
+      }, 300);
+    }, 300);
+  }, 300);
+});
+
+// 📊 Actualizar marcador
+function updateScoreboard(name, score) {
+  let exists = false;
+  Array.from(scoreList.children).forEach(li => {
+    if (li.textContent.startsWith(name + ":")) {
+      li.textContent = `${name}: ${score} monedas`;
+      exists = true;
+    }
+  });
+  if (!exists) {
+    const li = document.createElement("li");
+    li.textContent = `${name}: ${score} monedas`;
+    scoreList.appendChild(li);
+  }
+}
+</script>
+</body>
+</html>
+  
+  
+
+
+
+        
